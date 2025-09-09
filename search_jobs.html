@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Search Jobs - JobPortal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Search Form -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h4 class="mb-3"><i class="fas fa-search me-2"></i>Find Your Perfect Job</h4>
+            <form method="GET">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form.keywords.label(class="form-label") }}
+                        {{ form.keywords }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        {{ form.location.label(class="form-label") }}
+                        {{ form.location }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        {{ form.category.label(class="form-label") }}
+                        {{ form.category }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        {{ form.job_type.label(class="form-label") }}
+                        {{ form.job_type }}
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Search Jobs
+                            </button>
+                            <a href="{{ url_for('search_jobs') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-2"></i>Clear Filters
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5>
+                    {% if jobs.items %}
+                        Showing {{ jobs.items|length }} of {{ jobs.total }} jobs
+                    {% else %}
+                        No jobs found
+                    {% endif %}
+                </h5>
+                {% if jobs.pages > 1 %}
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">Page {{ jobs.page }} of {{ jobs.pages }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if jobs.items %}
+                <!-- Job Listings -->
+                <div class="row">
+                    {% for job in jobs.items %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="card-title mb-0">{{ job.title }}</h5>
+                                    <span class="badge bg-primary">{{ job.job_type.replace('-', ' ').title() }}</span>
+                                </div>
+                                
+                                <h6 class="text-primary mb-2">{{ job.company }}</h6>
+                                
+                                <div class="text-muted mb-3">
+                                    <p class="mb-1">
+                                        <i class="fas fa-map-marker-alt me-2"></i>{{ job.location }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-tag me-2"></i>{{ job.category.replace('_', ' ').title() }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-calendar me-2"></i>{{ job.posted_date.strftime('%b %d, %Y') }}
+                                    </p>
+                                </div>
+                                
+                                <p class="card-text text-muted">
+                                    {{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}
+                                </p>
+                                
+                                {% if job.salary_range != "Salary not specified" %}
+                                    <p class="text-success fw-bold mb-3">{{ job.salary_range }}</p>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted small">
+                                        {{ job.applications.count() }} applications
+                                    </div>
+                                    <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-primary">
+                                        View Details <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if jobs.pages > 1 %}
+                    <nav aria-label="Job search pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if jobs.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('search_jobs', page=jobs.prev_num, 
+                                        keywords=request.args.get('keywords', ''),
+                                        location=request.args.get('location', ''),
+                                        category=request.args.get('category', ''),
+                                        job_type=request.args.get('job_type', '')) }}">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for page_num in jobs.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num != jobs.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('search_jobs', page=page_num,
+                                                keywords=request.args.get('keywords', ''),
+                                                location=request.args.get('location', ''),
+                                                category=request.args.get('category', ''),
+                                                job_type=request.args.get('job_type', '')) }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if jobs.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('search_jobs', page=jobs.next_num,
+                                        keywords=request.args.get('keywords', ''),
+                                        location=request.args.get('location', ''),
+                                        category=request.args.get('category', ''),
+                                        job_type=request.args.get('job_type', '')) }}">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- No Results -->
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-4x text-muted mb-4"></i>
+                    <h4>No Jobs Found</h4>
+                    <p class="text-muted mb-4">Try adjusting your search criteria or browse all available positions.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('search_jobs') }}" class="btn btn-primary">
+                            <i class="fas fa-list me-2"></i>View All Jobs
+                        </a>
+                        {% if current_user.is_authenticated and current_user.role in ['employer', 'admin'] %}
+                            <a href="{{ url_for('post_job') }}" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>Post a Job
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Popular Categories -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="mb-4">Popular Categories</h4>
+            <div class="row">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="{{ url_for('search_jobs', category='technology') }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-laptop-code me-2"></i>Technology
+                    </a>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="{{ url_for('search_jobs', category='healthcare') }}" class="btn btn-outline-success w-100">
+                        <i class="fas fa-heartbeat me-2"></i>Healthcare
+                    </a>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="{{ url_for('search_jobs', category='finance') }}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-chart-line me-2"></i>Finance
+                    </a>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="{{ url_for('search_jobs', category='marketing') }}" class="btn btn-outline-warning w-100">
+                        <i class="fas fa-bullhorn me-2"></i>Marketing
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

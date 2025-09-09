@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}JobPortal - Find Your Dream Job{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">Find Your Dream Job Today</h1>
+                <p class="lead mb-4">Connect with top employers and discover opportunities that match your skills and ambitions.</p>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('search_jobs') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-search me-2"></i>Browse Jobs
+                    </a>
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg">Get Started</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="fas fa-users fa-10x opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-4">
+                <div class="card border-0 bg-transparent">
+                    <div class="card-body">
+                        <i class="fas fa-briefcase fa-3x text-primary mb-3"></i>
+                        <h3 class="fw-bold">{{ job_count }}</h3>
+                        <p class="text-muted">Active Job Listings</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-transparent">
+                    <div class="card-body">
+                        <i class="fas fa-building fa-3x text-success mb-3"></i>
+                        <h3 class="fw-bold">500+</h3>
+                        <p class="text-muted">Partner Companies</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-transparent">
+                    <div class="card-body">
+                        <i class="fas fa-user-check fa-3x text-info mb-3"></i>
+                        <h3 class="fw-bold">1000+</h3>
+                        <p class="text-muted">Successful Placements</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Search -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="text-center mb-4">Quick Job Search</h2>
+                <form action="{{ url_for('search_jobs') }}" method="GET">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-lg" name="keywords" placeholder="Job title or company">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-lg" name="location" placeholder="Location">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-search me-2"></i>Search Jobs
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Jobs -->
+{% if recent_jobs %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Latest Job Opportunities</h2>
+        <div class="row">
+            {% for job in recent_jobs %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">{{ job.title }}</h5>
+                            <span class="badge bg-primary">{{ job.job_type.replace('-', ' ').title() }}</span>
+                        </div>
+                        <h6 class="text-muted mb-2">{{ job.company }}</h6>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt me-2"></i>{{ job.location }}
+                        </p>
+                        <p class="card-text">{{ job.description[:100] }}{% if job.description|length > 100 %}...{% endif %}</p>
+                        {% if job.salary_range != "Salary not specified" %}
+                            <p class="text-success fw-bold">{{ job.salary_range }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ job.posted_date.strftime('%b %d, %Y') }}</small>
+                            <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('search_jobs') }}" class="btn btn-primary btn-lg">View All Jobs</a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- How It Works -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row">
+            <div class="col-lg-4 text-center">
+                <div class="mb-4">
+                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user-plus fa-2x text-white"></i>
+                    </div>
+                </div>
+                <h4>1. Create Account</h4>
+                <p class="text-muted">Sign up as a job seeker or employer to get started on your journey.</p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="mb-4">
+                    <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-search fa-2x text-white"></i>
+                    </div>
+                </div>
+                <h4>2. Search & Apply</h4>
+                <p class="text-muted">Browse thousands of jobs or post your listing to find the perfect match.</p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="mb-4">
+                    <div class="bg-info rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-handshake fa-2x text-white"></i>
+                    </div>
+                </div>
+                <h4>3. Get Connected</h4>
+                <p class="text-muted">Connect with employers or candidates and start your new career journey.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if job %}Applications for {{ job.title }}{% else %}My Applications{% endif %} - JobPortal
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="fas fa-file-alt me-2"></i>
+                {% if job %}
+                    Applications for "{{ job.title }}"
+                {% else %}
+                    My Applications
+                {% endif %}
+            </h2>
+            {% if job %}
+                <p class="text-muted mb-0">Managing applications for your job posting</p>
+            {% else %}
+                <p class="text-muted mb-0">Track your job application progress</p>
+            {% endif %}
+        </div>
+        {% if job %}
+            <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-eye me-2"></i>View Job
+            </a>
+        {% else %}
+            <a href="{{ url_for('search_jobs') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Find More Jobs
+            </a>
+        {% endif %}
+    </div>
+
+    {% if applications.items %}
+        <div class="row">
+            {% for app in applications.items %}
+            <div class="col-12 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                {% if job %}
+                                    <!-- Employer View -->
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="mb-1">{{ app.applicant.first_name }} {{ app.applicant.last_name }}</h5>
+                                            <p class="text-muted mb-0">{{ app.applicant.email }}</p>
+                                            {% if app.applicant.phone %}
+                                                <p class="text-muted mb-0">{{ app.applicant.phone }}</p>
+                                            {% endif %}
+                                            {% if app.applicant.location %}
+                                                <p class="text-muted mb-0">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>{{ app.applicant.location }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge bg-{{ 'success' if app.status == 'accepted' else 'danger' if app.status == 'rejected' else 'warning' if app.status == 'reviewed' else 'secondary' }} fs-6">
+                                            {{ app.status.title() }}
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <!-- Job Seeker View -->
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="mb-1">{{ app.job.title }}</h5>
+                                            <p class="text-primary mb-1">{{ app.job.company }}</p>
+                                            <p class="text-muted mb-0">
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ app.job.location }} • 
+                                                {{ app.job.job_type.replace('-', ' ').title() }}
+                                            </p>
+                                        </div>
+                                        <span class="badge bg-{{ 'success' if app.status == 'accepted' else 'danger' if app.status == 'rejected' else 'warning' if app.status == 'reviewed' else 'secondary' }} fs-6">
+                                            {{ app.status.title() }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+
+                                <div class="mb-3">
+                                    <h6><i class="fas fa-envelope me-2"></i>Cover Letter</h6>
+                                    <div class="bg-light p-3 rounded">
+                                        <p class="mb-0">{{ app.cover_letter[:200] }}{% if app.cover_letter|length > 200 %}...{% endif %}</p>
+                                    </div>
+                                </div>
+
+                                <div class="row text-muted small">
+                                    <div class="col-md-6">
+                                        <i class="fas fa-calendar me-2"></i>Applied: {{ app.applied_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </div>
+                                    {% if app.reviewed_date %}
+                                        <div class="col-md-6">
+                                            <i class="fas fa-eye me-2"></i>Reviewed: {{ app.reviewed_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="h-100 d-flex flex-column justify-content-between">
+                                    {% if job and (current_user.role == 'admin' or job.employer_id == current_user.id) %}
+                                        <!-- Employer Actions -->
+                                        <div class="mb-3">
+                                            <h6 class="mb-2">Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                {% if app.status != 'reviewed' %}
+                                                    <a href="{{ url_for('update_application_status', app_id=app.id, status='reviewed') }}" 
+                                                       class="btn btn-outline-warning btn-sm">
+                                                        <i class="fas fa-eye me-1"></i>Mark Reviewed
+                                                    </a>
+                                                {% endif %}
+                                                {% if app.status not in ['accepted', 'rejected'] %}
+                                                    <a href="{{ url_for('update_application_status', app_id=app.id, status='accepted') }}" 
+                                                       class="btn btn-success btn-sm">
+                                                        <i class="fas fa-check me-1"></i>Accept
+                                                    </a>
+                                                    <a href="{{ url_for('update_application_status', app_id=app.id, status='rejected') }}" 
+                                                       class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-times me-1"></i>Reject
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Resume Preview -->
+                                        <div class="mt-auto">
+                                            <button class="btn btn-outline-primary btn-sm w-100" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#resumeModal{{ app.id }}">
+                                                <i class="fas fa-file-text me-1"></i>View Full Resume
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <!-- Job Seeker Actions -->
+                                        <div class="mt-auto">
+                                            <a href="{{ url_for('job_detail', job_id=app.job.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                                                <i class="fas fa-eye me-1"></i>View Job Details
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if job and (current_user.role == 'admin' or job.employer_id == current_user.id) %}
+                <!-- Resume Modal -->
+                <div class="modal fade" id="resumeModal{{ app.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Resume - {{ app.applicant.first_name }} {{ app.applicant.last_name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <strong>Cover Letter:</strong>
+                                    <div class="bg-light p-3 rounded mt-2">
+                                        {{ app.cover_letter | nl2br | safe }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <strong>Resume/CV:</strong>
+                                    <div class="bg-light p-3 rounded mt-2" style="white-space: pre-wrap; font-family: monospace;">{{ app.resume_text }}</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if applications.pages > 1 %}
+            <nav aria-label="Applications pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if applications.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for(request.endpoint, page=applications.prev_num, **request.args) }}">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for page_num in applications.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num != applications.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for(request.endpoint, page=page_num, **request.args) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if applications.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for(request.endpoint, page=applications.next_num, **request.args) }}">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-4x text-muted mb-4"></i>
+            {% if job %}
+                <h4>No Applications Yet</h4>
+                <p class="text-muted mb-4">No candidates have applied to this job yet. Share your job posting to attract more applicants.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-primary">
+                        <i class="fas fa-eye me-2"></i>View Job Posting
+                    </a>
+                    <a href="{{ url_for('my_jobs') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-briefcase me-2"></i>My Jobs
+                    </a>
+                </div>
+            {% else %}
+                <h4>No Applications Yet</h4>
+                <p class="text-muted mb-4">You haven't applied to any jobs yet. Start exploring opportunities to find your perfect match!</p>
+                <a href="{{ url_for('search_jobs') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search me-2"></i>Browse Jobs
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

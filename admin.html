@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - JobPortal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Admin Header -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="bg-danger text-white p-4 rounded">
+                <h1 class="mb-2"><i class="fas fa-shield-alt me-2"></i>Admin Panel</h1>
+                <p class="mb-0 opacity-75">System administration and management dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h3 class="fw-bold">{{ users|length }}</h3>
+                    <p class="text-muted mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-briefcase fa-3x text-success mb-3"></i>
+                    <h3 class="fw-bold">{{ jobs|length }}</h3>
+                    <p class="text-muted mb-0">Total Jobs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-alt fa-3x text-info mb-3"></i>
+                    <h3 class="fw-bold">{{ applications|length }}</h3>
+                    <p class="text-muted mb-0">Total Applications</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>Users Management
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" type="button" role="tab">
+                <i class="fas fa-briefcase me-2"></i>Jobs Management
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications" type="button" role="tab">
+                <i class="fas fa-file-alt me-2"></i>Recent Applications
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="adminTabsContent">
+        <!-- Users Management Tab -->
+        <div class="tab-pane fade show active" id="users" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>User Management</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Company</th>
+                                        <th>Location</th>
+                                        <th>Joined</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr class="{{ 'table-secondary' if not user.is_active else '' }}">
+                                        <td>{{ user.id }}</td>
+                                        <td>
+                                            <strong>{{ user.first_name }} {{ user.last_name }}</strong>
+                                            <br><small class="text-muted">{{ user.username }}</small>
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'warning' if user.role == 'employer' else 'info' }}">
+                                                {{ user.role.replace('_', ' ').title() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ user.company_name if user.company_name else '-' }}</td>
+                                        <td>{{ user.location if user.location else '-' }}</td>
+                                        <td>{{ user.created_at.strftime('%b %d, %Y') }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if user.is_active else 'danger' }}">
+                                                {{ 'Active' if user.is_active else 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if user.id != current_user.id %}
+                                                <a href="{{ url_for('toggle_user_status', user_id=user.id) }}" 
+                                                   class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}"
+                                                   onclick="return confirm('Are you sure you want to {{ "deactivate" if user.is_active else "activate" }} this user?')">
+                                                    <i class="fas fa-{{ 'ban' if user.is_active else 'check' }} me-1"></i>
+                                                    {{ 'Deactivate' if user.is_active else 'Activate' }}
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted small">Current User</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5>No Users Found</h5>
+                            <p class="text-muted">No users are registered in the system.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs Management Tab -->
+        <div class="tab-pane fade" id="jobs" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Job Listings Management</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if jobs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Job Title</th>
+                                        <th>Company</th>
+                                        <th>Category</th>
+                                        <th>Location</th>
+                                        <th>Type</th>
+                                        <th>Posted By</th>
+                                        <th>Posted Date</th>
+                                        <th>Applications</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in jobs %}
+                                    <tr class="{{ 'table-secondary' if not job.is_active else '' }}">
+                                        <td>{{ job.id }}</td>
+                                        <td>
+                                            <strong>{{ job.title }}</strong>
+                                            {% if job.salary_range != "Salary not specified" %}
+                                                <br><small class="text-success">{{ job.salary_range }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ job.company }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ job.category.replace('_', ' ').title() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ job.location }}</td>
+                                        <td>{{ job.job_type.replace('-', ' ').title() }}</td>
+                                        <td>{{ job.poster.first_name }} {{ job.poster.last_name }}</td>
+                                        <td>{{ job.posted_date.strftime('%b %d, %Y') }}</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ job.applications.count() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if job.is_active else 'danger' }}">
+                                                {{ 'Active' if job.is_active else 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('job_detail', job_id=job.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('toggle_job_status', job_id=job.id) }}" 
+                                                   class="btn btn-sm btn-outline-{{ 'danger' if job.is_active else 'success' }}"
+                                                 onclick="return confirm('Are you sure you want to {{ "deactivate" if user.is_active else "activate" }} this user?')">
+                                                    <i class="fas fa-{{ 'ban' if job.is_active else 'check' }}"></i>
+                                                </a>
+                                                <a href="{{ url_for('job_applications', job_id=job.id) }}" 
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-users"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                            <h5>No Jobs Found</h5>
+                            <p class="text-muted">No job listings are available in the system.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Tab -->
+        <div class="tab-pane fade" id="applications" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Recent Applications</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if applications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Applicant</th>
+                                        <th>Job Title</th>
+                                        <th>Company</th>
+                                        <th>Applied Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for app in applications %}
+                                    <tr>
+                                        <td>{{ app.id }}</td>
+                                        <td>
+                                            <strong>{{ app.applicant.first_name }} {{ app.applicant.last_name }}</strong>
+                                            <br><small class="text-muted">{{ app.applicant.email }}</small>
+                                        </td>
+                                        <td>{{ app.job.title }}</td>
+                                        <td>{{ app.job.company }}</td>
+                                        <td>{{ app.applied_date.strftime('%b %d, %Y') }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if app.status == 'accepted' else 'danger' if app.status == 'rejected' else 'warning' if app.status == 'reviewed' else 'secondary' }}">
+                                                {{ app.status.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('job_applications', job_id=app.job.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <h5>No Applications Found</h5>
+                            <p class="text-muted">No job applications have been submitted yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="mb-4">Quick Actions</h4>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <i class="fas fa-plus fa-3x text-primary mb-3"></i>
+                            <h6>Post Job</h6>
+                            <p class="text-muted small">Create a new job listing</p>
+                            <a href="{{ url_for('post_job') }}" class="btn btn-primary btn-sm">Create Job</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                            <h6>View Analytics</h6>
+                            <p class="text-muted small">System performance metrics</p>
+                            <button class="btn btn-success btn-sm" disabled>Coming Soon</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <i class="fas fa-cog fa-3x text-info mb-3"></i>
+                            <h6>System Settings</h6>
+                            <p class="text-muted small">Configure application settings</p>
+                            <button class="btn btn-info btn-sm" disabled>Coming Soon</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <i class="fas fa-download fa-3x text-warning mb-3"></i>
+                            <h6>Export Data</h6>
+                            <p class="text-muted small">Download system reports</p>
+                            <button class="btn btn-warning btn-sm" disabled>Coming Soon</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize tooltips for admin panel
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Add confirmation dialogs for admin actions
+    const actionButtons = document.querySelectorAll('a[onclick*="confirm"]');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm(this.getAttribute('onclick').match(/confirm\('([^']+)'\)/)[1])) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
